@@ -25,7 +25,7 @@ namespace FastWpfGrid
 
         void HandleSelectionCommand(IFastGridView view, string command);
 
-        int? SelectedRowCountLimit { get; }
-        int? SelectedColumnCountLimit { get; }
+        int? SelectedRowCountLimit { get; set; }
+        int? SelectedColumnCountLimit { get; set; }
     }
 }

@@ -15,7 +15,7 @@ namespace ExcelMerge.GUI.Models
         private Color? decorationColor = null;
         private CellDecoration decoration = CellDecoration.None;
         private string toolTipText = string.Empty;
-        private Dictionary<int, int> rowIndexMap = new Dictionary<int, int>();
+        public Dictionary<int, int> rowIndexMap = new Dictionary<int, int>();
 
         public override int ColumnCount
         {
@@ -52,8 +52,8 @@ namespace ExcelMerge.GUI.Models
             get { return TooltipVisibilityMode.OnlyWhenTrimmed; }
         }
 
-        public int ColumnHeaderIndex { get; private set; }
-        public int RowHeaderIndex { get; private set; } = -1;
+        public int ColumnHeaderIndex { get; private set; } = 0;
+        public int RowHeaderIndex { get; private set; } = 0;
         public DiffType DiffType { get; private set; }
         public ExcelSheetDiff SheetDiff { get; private set; }
 

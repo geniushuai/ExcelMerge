@@ -13,7 +13,7 @@ namespace ExcelMerge
             Sheets = new Dictionary<string, ExcelSheet>();
         }
 
-        public static ExcelWorkbook Create(string path, ExcelSheetReadConfig config)
+        public static ExcelWorkbook Create(string path, ExcelSheetReadConfig config, int sheetIndex=-1)
         {
             if (Path.GetExtension(path) == ".csv")
                 return CreateFromCsv(path, config);
@@ -23,10 +23,18 @@ namespace ExcelMerge
 
             var srcWb = WorkbookFactory.Create(path);
             var wb = new ExcelWorkbook();
-            for (int i = 0; i < srcWb.NumberOfSheets; i++)
+            if (sheetIndex > -1 && sheetIndex < srcWb.NumberOfSheets)
             {
-                var srcSheet = srcWb.GetSheetAt(i);
+                var srcSheet = srcWb.GetSheetAt(sheetIndex);
                 wb.Sheets.Add(srcSheet.SheetName, ExcelSheet.Create(srcSheet, config));
+            }
+            else
+            {
+                for (int i = 0; i < srcWb.NumberOfSheets; i++)
+                {
+                    var srcSheet = srcWb.GetSheetAt(i);
+                    wb.Sheets.Add(srcSheet.SheetName, ExcelSheet.Create(srcSheet, config));
+                }
             }
 
             return wb;

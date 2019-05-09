@@ -9,19 +9,33 @@ namespace ExcelMerge
         public int Index { get; private set; }
         public List<ExcelCell> Cells { get; private set; }
 
-        public ExcelRow(int index, IEnumerable<ExcelCell> cells)
+        public bool KeyCompare { get; private set; }
+        public ExcelRow(int index, IEnumerable<ExcelCell> cells, bool keyCompare=false)
         {
+            KeyCompare = keyCompare;
             Index = index;
             Cells = cells.ToList();
         }
 
         public override bool Equals(object obj)
         {
-            var other = obj as ExcelRow;
+            if (KeyCompare)
+            {
+                return KeyEqual(obj);
+            }
+            else
+            {
+                var other = obj as ExcelRow;
 
-            return Equals(other);
+                return Equals(other);
+            }
         }
 
+        public bool KeyEqual(object obj)
+        {
+            var other = obj as ExcelRow;
+            return Cells[0].GetHashCode() == other.Cells[0].GetHashCode();
+        }
         public override int GetHashCode()
         {
             var hash = 7;
@@ -68,6 +82,7 @@ namespace ExcelMerge
 
         public int GetHashCode(ExcelRow obj)
         {
+            //改为只判断第一个cell
             var hash = 7;
             var index = 0;
             foreach (var cell in obj.Cells)
@@ -80,7 +95,34 @@ namespace ExcelMerge
                 index++;
             }
 
-            return hash;
+            return hash;            
         }
     }
+
+    internal class RowKeyComparer : IEqualityComparer<ExcelRow>
+    {
+        public HashSet<int> IgnoreColumns { get; private set; }
+        public RowKeyComparer(HashSet<int> ignoreColumns) 
+        {
+            IgnoreColumns = ignoreColumns;
+        }
+        public bool Equals(ExcelRow x, ExcelRow y)
+        {
+            string xHashCode = "-1";
+            string yHashCode = "-1";
+            if (x.Cells.Count>0)
+                xHashCode= x.Cells[0].Value.ToString();
+            if(y.Cells.Count>0)
+                yHashCode = y.Cells[0].Value.ToString();
+            return xHashCode == yHashCode;
+        }
+        public int GetHashCode(ExcelRow obj)
+        {
+            if (obj.Cells.Count > 0)
+                return obj.Cells[0].GetHashCode();
+            else
+                return -1;
+        }
+    }
+
 }

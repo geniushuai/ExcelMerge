@@ -78,7 +78,7 @@ namespace ExcelMerge.GUI.Settings
 
         private static string Convert(string str)
         {
-            return str.Replace("${SRC}", EMEnvironmentValue.Get("SRC")).Replace("${DST}", EMEnvironmentValue.Get("DST"));
+            return str.Replace("${SRC}", EMEnvironmentValue.Get("SRC")).Replace("${DST}", EMEnvironmentValue.Get("DST")).Replace("${TARGET}", EMEnvironmentValue.Get("TARGET"));
         }
     }
 }

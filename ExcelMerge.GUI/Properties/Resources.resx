@@ -138,12 +138,18 @@
   <data name="MenuItem_OpenAsSrcFile" xml:space="preserve">
     <value>Open as Src File</value>
   </data>
+  <data name="MenuItem_OpenAsTargetFile" xml:space="preserve">
+    <value>Open as target File</value>
+  </data>  
   <data name="MenuItem_OpenDstFile" xml:space="preserve">
     <value>Open dst File</value>
   </data>
   <data name="MenuItem_OpenSrcFile" xml:space="preserve">
     <value>Open src file</value>
   </data>
+  <data name="MenuItem_OpenTargetFile" xml:space="preserve">
+    <value>Open target file</value>
+  </data>  
   <data name="MenuItem_RecentFiles" xml:space="preserve">
     <value>Recent Files</value>
   </data>
@@ -261,12 +267,18 @@
   <data name="Word_Sheet" xml:space="preserve">
     <value>Sheet</value>
   </data>
+  <data name="Word_File" xml:space="preserve">
+    <value>文件</value>
+  </data>
   <data name="Word_DstFile" xml:space="preserve">
     <value>Dst File</value>
   </data>
   <data name="Word_SrcFile" xml:space="preserve">
     <value>Src File</value>
   </data>
+  <data name="Word_TargetFile" xml:space="preserve">
+    <value>Target File</value>
+  </data>  
   <data name="Label_AddedColor" xml:space="preserve">
     <value>Added Color</value>
   </data>
@@ -452,8 +464,14 @@ If you don't want to apply file settings, enable "Ignore File Setting".</value>
   <data name="Word_SheetIndex" xml:space="preserve">
     <value>Sheet Index</value>
   </data>
+  <data name="Word_FileIndex" xml:space="preserve">
+    <value>文件位置</value>
+  </data>
   <data name="Word_SheetName" xml:space="preserve">
     <value>Sheet Name</value>
+  </data>
+  <data name="Word_FileName" xml:space="preserve">
+    <value>文件名</value>
   </data>
   <data name="Word_StartupSheet" xml:space="preserve">
     <value>Set as Startup Sheet</value>
@@ -491,10 +509,22 @@ If you don't want to apply file settings, enable "Ignore File Setting".</value>
   <data name="Label_FocusFirstDiff" xml:space="preserve">
     <value>Focus first diff when extracted</value>
   </data>
-  <data name="ContextMenu_CopyAsCsv" xml:space="preserve">
-    <value>Copy as CSV</value>
+  <data name="ContextMenu_CopySrcCell" xml:space="preserve">
+    <value>复制左边单元格</value>
   </data>
-  <data name="ContextMenu_CopyAsTsv" xml:space="preserve">
-    <value>Copy as TSV</value>
+  <data name="ContextMenu_CopySrcRow" xml:space="preserve">
+    <value>插入左边整行</value>
+  </data>
+  <data name="ContextMenu_ReplaceSrcRow" xml:space="preserve">
+    <value>替换左边整行</value>
+  </data>
+  <data name="ContextMenu_CopyDstCell" xml:space="preserve">
+    <value>复制右边单元格</value>
+  </data>
+  <data name="ContextMenu_CopyDstRow" xml:space="preserve">
+    <value>插入右边整行</value>
+  </data>
+  <data name="ContextMenu_ReplaceDstRow" xml:space="preserve">
+    <value>替换右边整行</value>
   </data>
 </root>

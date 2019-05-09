@@ -245,6 +245,30 @@ namespace FastWpfGrid
                 FixScrollPosition();
                 InvalidateAll();
             }
+            _showCellEditorIfMouseUp = FastGridCellAddress.Empty;
+
+            var pt = e.GetPosition(image);
+            pt.X *= DpiDetector.DpiXKoef;
+            pt.Y *= DpiDetector.DpiYKoef;
+            var cell2 = GetCellAddress(pt);
+
+
+            _selectedCells.ToList().ForEach(InvalidateCell);
+            ClearSelectedCells();
+            if (_currentCell.IsCell)
+            {
+                SetCurrentCell(cell2);
+            }
+            foreach (var rangeCell in GetCellRange(cell2, cell2))
+            {
+                AddSelectedCell(rangeCell);
+                InvalidateCell(rangeCell);
+            }
+            _dragStartCell = cell2;
+            _dragTimer.IsEnabled = true;
+            CaptureMouse();
+            OnDoubleClickCell();
+                
         }
 
         private void _dragTimer_Tick(object sender, EventArgs e)

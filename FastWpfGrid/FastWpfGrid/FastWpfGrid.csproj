@@ -49,6 +49,7 @@
     <Compile Include="ActiveSeries.cs" />
     <Compile Include="ColumnWidthChangedEventArgs.cs" />
     <Compile Include="DataTableGridModel.cs" />
+    <Compile Include="DoubleClickEventArgs.cs" />
     <Compile Include="ExplicitColumnDefinition.cs" />
     <Compile Include="FastGridCellAddress.cs" />
     <Compile Include="FastGridControl.xaml.cs">

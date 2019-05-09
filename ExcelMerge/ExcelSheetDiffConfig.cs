@@ -10,7 +10,9 @@ namespace ExcelMerge
     {
         public int SrcSheetIndex { get; set; }
         public int DstSheetIndex { get; set; }
+        public int TargetSheetIndex { get; set; }
         public int SrcHeaderIndex { get; set; }
         public int DstHeaderIndex { get; set; }
+        public int TargetHeaderIndex { get; set; }
     }
 }

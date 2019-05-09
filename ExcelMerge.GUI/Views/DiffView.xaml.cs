@@ -17,6 +17,9 @@ using ExcelMerge.GUI.ViewModels;
 using ExcelMerge.GUI.Settings;
 using ExcelMerge.GUI.Models;
 using ExcelMerge.GUI.Styles;
+using ExcelMerge;
+
+
 
 namespace ExcelMerge.GUI.Views
 {
@@ -26,7 +29,8 @@ namespace ExcelMerge.GUI.Views
         private IUnityContainer container;
         private const string srcKey = "src";
         private const string dstKey = "dst";
-
+        private const string targetKey = "target";
+        private ExcelHelperCom targetExcel = null;
         private FastGridControl copyTargetGrid;
 
         public DiffView()
@@ -46,6 +50,44 @@ namespace ExcelMerge.GUI.Views
         private DiffViewModel GetViewModel()
         {
             return DataContext as DiffViewModel;
+        }       
+        public string RealSrcFilePath
+        {
+            get {
+                if (!Directory.Exists(SrcPathTextBox.Text) || SrcFileCombobox.SelectedIndex < 0)                
+                    return "";
+                string srcFile = Path.Combine(SrcPathTextBox.Text, SrcFileCombobox.SelectedValue.ToString());
+                if (!File.Exists(srcFile))
+                    return "";
+                return srcFile;
+
+            }
+        }
+        public string RealDstFilePath
+        {
+            get
+            {
+                if (!Directory.Exists(DstPathTextBox.Text) || DstFileCombobox.SelectedIndex < 0)
+                    return "";
+                string dstFile = Path.Combine(DstPathTextBox.Text, DstFileCombobox.SelectedValue.ToString());
+                if (!File.Exists(dstFile))
+                    return "";
+                return dstFile;
+
+            }
+        }
+        public string RealTargetFilePath
+        {
+            get
+            {
+                if (!Directory.Exists(TargetPathTextBox.Text) || TargetFileCombobox.SelectedIndex < 0)
+                    return "";
+                string targetFile = Path.Combine(TargetPathTextBox.Text, TargetFileCombobox.SelectedValue.ToString());
+                if (!File.Exists(targetFile))
+                    return "";
+                return targetFile;
+
+            }
         }
 
         private void InitializeContainer()
@@ -53,28 +95,35 @@ namespace ExcelMerge.GUI.Views
             container = new UnityContainer();
             container
                 .RegisterInstance(srcKey, SrcDataGrid)
-                .RegisterInstance(dstKey, DstDataGrid)
+                .RegisterInstance(dstKey, DstDataGrid)                
                 .RegisterInstance(srcKey, SrcLocationGrid)
-                .RegisterInstance(dstKey, DstLocationGrid)
+                .RegisterInstance(dstKey, DstLocationGrid)                
                 .RegisterInstance(srcKey, SrcViewRectangle)
-                .RegisterInstance(dstKey, DstViewRectangle)
+                .RegisterInstance(dstKey, DstViewRectangle)                
                 .RegisterInstance(srcKey, SrcValueTextBox)
-                .RegisterInstance(dstKey, DstValueTextBox);
+                .RegisterInstance(dstKey, DstValueTextBox)
+                .RegisterInstance(srcKey, SrcPathTextBox)
+                .RegisterInstance(dstKey, DstPathTextBox);
         }
 
         private void InitializeEventListeners()
         {
             var srcEventHandler = new DiffViewEventHandler(srcKey);
             var dstEventHandler = new DiffViewEventHandler(dstKey);
+            var targetEventHandler = new DiffViewEventHandler(targetKey);
 
             DataGridEventDispatcher.Instance.Listeners.Add(srcEventHandler);
             DataGridEventDispatcher.Instance.Listeners.Add(dstEventHandler);
+            DataGridEventDispatcher.Instance.Listeners.Add(targetEventHandler);
             LocationGridEventDispatcher.Instance.Listeners.Add(srcEventHandler);
             LocationGridEventDispatcher.Instance.Listeners.Add(dstEventHandler);
+            LocationGridEventDispatcher.Instance.Listeners.Add(targetEventHandler);
             ViewportEventDispatcher.Instance.Listeners.Add(srcEventHandler);
             ViewportEventDispatcher.Instance.Listeners.Add(dstEventHandler);
+            ViewportEventDispatcher.Instance.Listeners.Add(targetEventHandler);
             ValueTextBoxEventDispatcher.Instance.Listeners.Add(srcEventHandler);
             ValueTextBoxEventDispatcher.Instance.Listeners.Add(dstEventHandler);
+            ValueTextBoxEventDispatcher.Instance.Listeners.Add(targetEventHandler);
         }
 
         private void OnApplicationSettingUpdated()
@@ -94,12 +143,13 @@ namespace ExcelMerge.GUI.Views
             ToolExpander.IsExpanded = false;
         }
 
-        private ExcelSheetDiffConfig CreateDiffConfig(FileSetting srcFileSetting, FileSetting dstFileSetting, bool isStartup)
+        private ExcelSheetDiffConfig CreateDiffConfig(FileSetting srcFileSetting, FileSetting dstFileSetting, FileSetting targetFileSetting, bool isStartup)
         {
             var config = new ExcelSheetDiffConfig();
 
             config.SrcSheetIndex = SrcSheetCombobox.SelectedIndex;
             config.DstSheetIndex = DstSheetCombobox.SelectedIndex;
+            config.TargetSheetIndex = TargetSheetCombobox.SelectedIndex;
 
             if (srcFileSetting != null)
             {
@@ -117,6 +167,13 @@ namespace ExcelMerge.GUI.Views
                 config.DstHeaderIndex = dstFileSetting.ColumnHeaderIndex;
             }
 
+            if (targetFileSetting != null)
+            {
+                if (isStartup)
+                    config.TargetSheetIndex = GetSheetIndex(targetFileSetting, TargetSheetCombobox.Items);
+
+                config.TargetHeaderIndex = targetFileSetting.ColumnHeaderIndex;
+            }
             return config;
         }
 
@@ -170,18 +227,39 @@ namespace ExcelMerge.GUI.Views
             var args = new DiffViewEventArgs<Grid>(sender as Grid, container);
             LocationGridEventDispatcher.Instance.DispatchSizeChangeEvent(args, e);
         }
-
+        private void DataGrid_DoubleClickCell(object sender, FastWpfGrid.DoubleClickEventArgs e)
+        {
+            var grid = copyTargetGrid = sender as FastGridControl;
+            if (grid == null)
+                return;            
+            var srcRowHeaderText = (SrcDataGrid.Model as DiffGridModel).GetRowHeaderText(SrcDataGrid.CurrentCell.Row.Value);
+            var srcColHeaderText = (SrcDataGrid.Model as DiffGridModel).GetColumnHeaderText(SrcDataGrid.CurrentCell.Column.Value);
+            var srcRow = SrcDataGrid.CurrentCell.Row;
+            var srcCol = SrcDataGrid.CurrentCell.Column;
+            var dstRowHeaderText = (DstDataGrid.Model as DiffGridModel).GetRowHeaderText(DstDataGrid.CurrentCell.Row.Value);
+            var dstColHeaderText = (DstDataGrid.Model as DiffGridModel).GetColumnHeaderText(DstDataGrid.CurrentCell.Column.Value);
+            var dstRow = DstDataGrid.CurrentCell.Row;
+            var dstCol = DstDataGrid.CurrentCell.Column;
+            if (grid.Name == "SrcDataGrid")
+            {
+                TryToSelectTargetCell(srcRowHeaderText, srcColHeaderText, srcRow.Value, srcCol.Value);
+            }
+            else if (grid.Name == "DstDataGrid")
+            {
+                TryToSelectTargetCell(dstRowHeaderText, dstColHeaderText, dstRow.Value, dstCol.Value);
+            }
+        }
         private void DataGrid_SelectedCellsChanged(object sender, FastWpfGrid.SelectionChangedEventArgs e)
         {
             var grid = copyTargetGrid = sender as FastGridControl;
             if (grid == null)
                 return;
 
-            copyTargetGrid = grid;
-
+                       
+            var name = grid.Name;
             var args = new DiffViewEventArgs<FastGridControl>(sender as FastGridControl, container);
             DataGridEventDispatcher.Instance.DispatchSelectedCellChangeEvent(args);
-
+            copyTargetGrid = grid;
             if (!SrcDataGrid.CurrentCell.Row.HasValue || !DstDataGrid.CurrentCell.Row.HasValue)
                 return;
 
@@ -194,8 +272,7 @@ namespace ExcelMerge.GUI.Views
             var srcValue =
                 (SrcDataGrid.Model as DiffGridModel).GetCellText(SrcDataGrid.CurrentCell.Row.Value, SrcDataGrid.CurrentCell.Column.Value, true);
             var dstValue =
-                (DstDataGrid.Model as DiffGridModel).GetCellText(DstDataGrid.CurrentCell.Row.Value, DstDataGrid.CurrentCell.Column.Value, true);
-
+                (DstDataGrid.Model as DiffGridModel).GetCellText(DstDataGrid.CurrentCell.Row.Value, DstDataGrid.CurrentCell.Column.Value, true);            
             UpdateValueDiff(srcValue, dstValue);
 
             if (App.Instance.Setting.AlwaysExpandCellDiff)
@@ -203,6 +280,17 @@ namespace ExcelMerge.GUI.Views
                 var a = new DiffViewEventArgs<RichTextBox>(null, container, TargetType.First);
                 ValueTextBoxEventDispatcher.Instance.DispatchGotFocusEvent(a);
             }
+        }
+
+        private void TryToSelectTargetCell(string rowHeaderText, string colHeaderText, int rowIndex, int colIndex)
+        {
+            if (targetExcel == null)
+                return;
+            var rowResult = targetExcel.GetRowByHeaderText(rowHeaderText, rowIndex);
+            var colResult = targetExcel.GetColByHeaderText(colHeaderText, colIndex);
+            if (rowResult.Item2 < 0 || colResult.Item2 < 0)
+                return;
+            targetExcel.ActiveCell(rowResult.Item2, colResult.Item2);
         }
 
         private void ValueTextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -373,19 +461,56 @@ namespace ExcelMerge.GUI.Views
             };
         }
 
-        private Tuple<ExcelWorkbook, ExcelWorkbook> ReadWorkbooks()
+        private Dictionary<string, int> ReadTargetWorkBooks(int targetSheetIndex = 0)
+        {
+            var config = CreateReadConfig();
+            Dictionary<string, int> rowKeyCache = new Dictionary<string, int>();
+            ExcelWorkbook twb = ExcelWorkbook.Create(RealTargetFilePath, config, targetSheetIndex);
+            int continueBlankCount = 0;
+            foreach(var rowInfo in twb.Sheets[twb.Sheets.Keys.First()].Rows)
+            {
+                int rowIndex = rowInfo.Key;
+                ExcelRow row = rowInfo.Value;
+                if(row.Cells.Count>0)
+                {
+                    string data = row.Cells[0].Value.ToString().Trim();
+                    if(data == "")
+                    {
+                        continueBlankCount++;
+                    }
+                    else
+                    {
+                        continueBlankCount = 0;
+                    }
+                    if (!rowKeyCache.ContainsKey(data))
+                    {
+                        rowKeyCache[data] = rowIndex;
+                    }
+                }
+                if (continueBlankCount > ExcelHelperCom.ContinueRowBlankUpperLimit)
+                    break;
+            }
+            return rowKeyCache;                        
+        }
+        private Tuple<ExcelWorkbook, ExcelWorkbook> ReadWorkbooks(int srcSheetIndex = 0, int dstSheetIndex=0)
         {
             ExcelWorkbook swb = null;
             ExcelWorkbook dwb = null;
-            var srcPath = SrcPathTextBox.Text;
-            var dstPath = DstPathTextBox.Text;
+            var srcPath = RealSrcFilePath;
+            var dstPath = RealDstFilePath;            
             ProgressWindow.DoWorkWithModal(progress =>
             {
                 progress.Report(Properties.Resources.Msg_ReadingFiles);
 
                 var config = CreateReadConfig();
-                swb = ExcelWorkbook.Create(srcPath, config);
-                dwb = ExcelWorkbook.Create(dstPath, config);
+                /*
+                config.TrimFirstBlankColumns = true;
+                config.TrimLastBlankColumns = true;
+                config.TrimFirstBlankRows = true;
+                config.TrimLastBlankRows = true;
+                */
+                swb = ExcelWorkbook.Create(srcPath, config, srcSheetIndex);
+                dwb = ExcelWorkbook.Create(dstPath, config, dstSheetIndex);                
             });
 
             return Tuple.Create(swb, dwb);
@@ -395,8 +520,10 @@ namespace ExcelMerge.GUI.Views
         {
             FileSetting srcSetting = null;
             FileSetting dstSetting = null;
+            FileSetting targetSetting = null;
             var srcPath = SrcPathTextBox.Text;
             var dstPath = DstPathTextBox.Text;
+            var targetPath = TargetPathTextBox.Text;
             if (!IgnoreFileSettingCheckbox.IsChecked.Value)
             {
                 srcSetting =
@@ -405,7 +532,10 @@ namespace ExcelMerge.GUI.Views
                 dstSetting =
                     FindFilseSetting(Path.GetFileName(dstPath), DstSheetCombobox.SelectedIndex, DstSheetCombobox.SelectedItem.ToString(), isStartup);
 
-                diffConfig = CreateDiffConfig(srcSetting, dstSetting, isStartup);
+                targetSetting =
+                    FindFilseSetting(Path.GetFileName(targetPath), TargetSheetCombobox.SelectedIndex, TargetSheetCombobox.SelectedItem.ToString(), isStartup);
+
+                diffConfig = CreateDiffConfig(srcSetting, dstSetting, targetSetting, isStartup);
             }
             else
             {
@@ -413,6 +543,7 @@ namespace ExcelMerge.GUI.Views
 
                 diffConfig.SrcSheetIndex = Math.Max(SrcSheetCombobox.SelectedIndex, 0);
                 diffConfig.DstSheetIndex = Math.Max(DstSheetCombobox.SelectedIndex, 0);
+                diffConfig.TargetSheetIndex = Math.Max(TargetSheetCombobox.SelectedIndex, 0);
             }
 
             return Tuple.Create(srcSetting, dstSetting);
@@ -432,32 +563,59 @@ namespace ExcelMerge.GUI.Views
 
         private void ExecuteDiff(bool isStartup = false)
         {
-            if (!File.Exists(SrcPathTextBox.Text) || !File.Exists(DstPathTextBox.Text))
-                return;
+                        
+            if (!File.Exists(RealSrcFilePath) || !File.Exists(RealDstFilePath) || !File.Exists(RealTargetFilePath))
+                return;                
+            if (targetExcel != null)
+            {
+                try { 
+                    targetExcel.ExitApp();
+                }
+                catch
+                {
 
+                }
+            targetExcel = null;        
+            }
+            Dictionary<string, int> keyCache =  ReadTargetWorkBooks();
+            targetExcel = new ExcelHelperCom();
+            if(!targetExcel.OpenExcel(RealTargetFilePath, keyCache))
+            {
+                MessageBox.Show("打开excel失败");
+                return;
+            }
+            targetExcel.ShowExcel();
+            targetExcel.ActivateSheet(TargetSheetCombobox.SelectedIndex+1);
+            targetExcel.ActiveCell(1, 1);           
             var args = new DiffViewEventArgs<FastGridControl>(null, container, TargetType.First);
             DataGridEventDispatcher.Instance.DispatchPreExecuteDiffEvent(args);
 
-            var workbooks = ReadWorkbooks();
+            var workbooks = ReadWorkbooks(SrcSheetCombobox.SelectedIndex, DstSheetCombobox.SelectedIndex);
             var srcWorkbook = workbooks.Item1;
-            var dstWorkbook = workbooks.Item2;
+            var dstWorkbook = workbooks.Item2;            
 
             var fileSettings = FindFileSettings(isStartup);
             var srcFileSetting = fileSettings.Item1;
-            var dstFileSetting = fileSettings.Item2;
+            var dstFileSetting = fileSettings.Item2;            
 
             SrcSheetCombobox.SelectedIndex = diffConfig.SrcSheetIndex;
             DstSheetCombobox.SelectedIndex = diffConfig.DstSheetIndex;
+            TargetSheetCombobox.SelectedIndex = diffConfig.TargetSheetIndex;
 
             var srcSheet = srcWorkbook.Sheets[SrcSheetCombobox.SelectedItem.ToString()];
             var dstSheet = dstWorkbook.Sheets[DstSheetCombobox.SelectedItem.ToString()];
+            //var targetSheet = targetWorkbook.Sheets[TargetSheetCombobox.SelectedItem.ToString()];
 
-            if (srcSheet.Rows.Count > 10000 || dstSheet.Rows.Count > 10000)
+            if (srcSheet.Rows.Count > 50000 || dstSheet.Rows.Count > 50000 )
                 MessageBox.Show(Properties.Resources.Msg_WarnSize);
 
             var diff = ExecuteDiff(srcSheet, dstSheet);
             SrcDataGrid.Model = new DiffGridModel(diff, DiffType.Source);
+            SrcDataGrid.Model.SelectedRowCountLimit = 100;
+            SrcDataGrid.Model.SelectedColumnCountLimit = 100;
             DstDataGrid.Model = new DiffGridModel(diff, DiffType.Dest);
+            DstDataGrid.Model.SelectedRowCountLimit = 100;
+            DstDataGrid.Model.SelectedColumnCountLimit = 100;
 
             args = new DiffViewEventArgs<FastGridControl>(SrcDataGrid, container);
             DataGridEventDispatcher.Instance.DispatchFileSettingUpdateEvent(args, srcFileSetting);
@@ -470,10 +628,11 @@ namespace ExcelMerge.GUI.Views
             DataGridEventDispatcher.Instance.DispatchPostExecuteDiffEvent(args);
 
             var summary = diff.CreateSummary();
-            GetViewModel().UpdateDiffSummary(summary);
+            GetViewModel().UpdateDiffSummary(summary);             
 
+            //book.Activate = book.Sheets[TargetSheetCombobox.SelectedIndex];
             if (!App.Instance.KeepFileHistory)
-                App.Instance.UpdateRecentFiles(SrcPathTextBox.Text, DstPathTextBox.Text);
+                App.Instance.UpdateRecentFiles(SrcPathTextBox.Text, DstPathTextBox.Text, TargetPathTextBox.Text);
 
             if (App.Instance.Setting.NotifyEqual && !summary.HasDiff)
                 MessageBox.Show(Properties.Resources.Message_NoDiff);
@@ -845,8 +1004,71 @@ namespace ExcelMerge.GUI.Views
 
             SrcDataGrid.CurrentCell = nextCell;
         }
+        private void CopyCurrentRow(FastGridControl copyTargetGrid, bool replace=false)
+        {
+            if (copyTargetGrid == null)
+                return;
 
-        private void CopyToClipboardSelectedCells(string separator)
+            var model = copyTargetGrid.Model as DiffGridModel;
+            if (model == null)
+                return;
+            bool currentRowReplace = replace;
+            foreach (var currentCell in copyTargetGrid.SelectedCells)
+            {
+                string colHeaderText = model.GetColumnHeaderText(currentCell.Column.Value);
+                string rowHeaderText = model.GetRowHeaderText(currentCell.Row.Value);
+                int rowCount = model.RowCount;
+                int columnCount = model.ColumnCount;
+                var rowIndexInTarget = targetExcel.GetRowByHeaderText(rowHeaderText, currentCell.Row.Value);
+                if (rowIndexInTarget.Item1 == 1)
+                {
+                    //MessageBox.Show("第一列中已经存在：" + rowHeaderText + "将在其前一行插入复制内容");
+                    targetExcel.ActiveCell(rowIndexInTarget.Item2, 1);
+                    currentRowReplace = true && replace;                    
+                }
+                else
+                {
+                    //MessageBox.Show("第一列中:" + rowHeaderText + "不存在,将找最接近的前一行插入复制内容");
+                    targetExcel.ActiveCell(rowIndexInTarget.Item2 + 1, 1);
+                    currentRowReplace = false;
+                }
+                int newRowIndex = rowIndexInTarget.Item2;
+                if (!currentRowReplace)
+                    newRowIndex = targetExcel.InsertRow();
+                for (int colIndex = 0; colIndex < columnCount; ++colIndex)
+                {
+                    string currentColHeaderText = model.GetColumnHeaderText(colIndex);
+                    string currentCellText = model.GetCellText(currentCell.Row.Value, colIndex);
+                    string targetCellText = targetExcel.ReadData(newRowIndex, colIndex + 1);
+                    if(currentCellText != targetCellText)
+                        targetExcel.WriteData(currentCellText, newRowIndex, colIndex + 1);
+                }                
+            }
+        }
+        private void CopyCurrentCell(FastGridControl copyTargetGrid)
+        {
+            if (copyTargetGrid == null)
+                return;            
+            var model = copyTargetGrid.Model as DiffGridModel;
+            if (model == null)
+                return;
+            foreach (var currentCell in copyTargetGrid.SelectedCells)
+            {
+                string colHeaderText = model.GetColumnHeaderText(currentCell.Column.Value);
+                string rowHeaderText = model.GetRowHeaderText(currentCell.Row.Value);
+                int rowCount = model.RowCount;
+                int columnCount = model.ColumnCount;
+                var rowIndexInTarget = targetExcel.GetRowByHeaderText(rowHeaderText, currentCell.Row.Value);
+                var colIndexInTarget = targetExcel.GetColByHeaderText(colHeaderText, currentCell.Column.Value);
+                if (rowIndexInTarget.Item2 < 0 || colIndexInTarget.Item2 < 0)
+                {
+                    MessageBox.Show("没有在Excel表中找到" + colHeaderText + ":" + rowHeaderText);
+                    return;
+                }
+                targetExcel.WriteData(model.GetCellText(copyTargetGrid.SelectedCells.First(), true), rowIndexInTarget.Item2, colIndexInTarget.Item2);
+            }
+        }
+        private void CopyToClipboardSelectedCells(FastGridControl copyTargetGrid,string separator)
         {
             if (copyTargetGrid == null)
                 return;
@@ -962,13 +1184,38 @@ namespace ExcelMerge.GUI.Views
                         }
                     }
                     break;
-                case Key.C:
+                case Key.Z:
                     {
-                        if (Keyboard.IsKeyDown(Key.LeftCtrl))
-                        {
-                            CopyToClipboardSelectedCells(Keyboard.IsKeyDown(Key.RightShift) || Keyboard.IsKeyDown(Key.LeftShift) ? "," : "\t");
-                            e.Handled = true;
+                        if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+                        {                            
+                            CopyCurrentRow(SrcDataGrid, false);
                         }
+                        else if(Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
+                        {
+                            CopyCurrentSrcCell_Click(null, null);
+                        }
+                        else if (Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt))
+                        {
+                            CopyCurrentRow(SrcDataGrid,true);
+                        }
+                        e.Handled = true;
+                    }
+                    break;
+                case Key.Y:
+                    {
+                        if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+                        {
+                            CopyCurrentRow(DstDataGrid, false);
+                        }
+                        else if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
+                        {
+                            CopyCurrentDstCell_Click(null, null);
+                        }
+                        else if(Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt))
+                        {
+                            CopyCurrentRow(DstDataGrid, true);
+                        }
+                        e.Handled = true;
                     }
                     break;
                 case Key.B:
@@ -1084,14 +1331,150 @@ namespace ExcelMerge.GUI.Views
             return log.Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ");
         }
 
-        private void CopyAsTsv_Click(object sender, RoutedEventArgs e)
+        private void CopyCurrentSrcRow_Click(object sender, RoutedEventArgs e)
         {
-            CopyToClipboardSelectedCells("\t");
+            CopyCurrentRow(SrcDataGrid);
+            CopyToClipboardSelectedCells(SrcDataGrid, "\t");
         }
 
-        private void CopyAsCsv_Click(object sender, RoutedEventArgs e)
+        private void CopyCurrentDstRow_Click(object sender, RoutedEventArgs e)
         {
-            CopyToClipboardSelectedCells(",");
+            CopyCurrentRow(DstDataGrid);
+            CopyToClipboardSelectedCells(DstDataGrid, "\t");
+        }
+
+        private void ReplaceCurrentDstRow_Click(object sender, RoutedEventArgs e)
+        {
+            CopyCurrentRow(DstDataGrid, true);
+            CopyToClipboardSelectedCells(DstDataGrid, "\t");
+        }
+        private void ReplaceCurrentSrcRow_Click(object sender, RoutedEventArgs e)
+        {
+            CopyCurrentRow(SrcDataGrid,true);
+            CopyToClipboardSelectedCells(SrcDataGrid, "\t");
+        }
+        private void CopyCurrentSrcCell_Click(object sender, RoutedEventArgs e)
+        {
+            CopyCurrentCell(SrcDataGrid);
+            CopyToClipboardSelectedCells(SrcDataGrid, ",");
+        }
+        private void CopyCurrentDstCell_Click(object sender, RoutedEventArgs e)
+        {
+            CopyCurrentCell(DstDataGrid);
+            CopyToClipboardSelectedCells(DstDataGrid,",");
+        }
+
+        private void SrcSheetCombobox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+
+        }
+        private void matchItem(ComboBox sender, string selectedValue)
+        {
+            string candidateItem = "";
+            foreach (string item in sender.ItemsSource)
+            {
+                if (item == selectedValue)
+                {
+                    sender.SelectedValue = item;
+                    break;
+                }
+                for(int i=0;i<item.Length&&i<selectedValue.Length;++i)
+                {
+                    if( selectedValue[i] =='.' || item[i] == '.')
+                    {
+                        candidateItem = item;
+                        break;
+                    }
+                    if(item[i]!= selectedValue[i])
+                    {
+                        break;
+                    }
+                }
+            }
+            if (candidateItem != "")
+            {
+                sender.SelectedValue = candidateItem;
+            }
+        }
+        private void SrcFileCombobox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            var path = SrcPathTextBox.Text;
+            var comb = sender as ComboBox;
+            if (comb.SelectedIndex < 0)
+            {
+                return;
+            }
+            string selectedValue = comb.Items[comb.SelectedIndex].ToString();
+            var newPath = Path.Combine(path, selectedValue);
+            var exists = File.Exists(newPath);
+            if(exists)
+            {
+                matchItem(DstFileCombobox, selectedValue);
+                matchItem(TargetFileCombobox, selectedValue);
+                try
+                {                    
+                    SrcSheetCombobox.ItemsSource = ExcelWorkbook.GetSheetNames(newPath).ToList();                    
+                    SrcSheetCombobox.SelectedIndex = 0;
+                }
+                catch
+                {
+                    SrcSheetCombobox.SelectedIndex = -1;
+                    SrcSheetCombobox.ItemsSource = new List<string>();
+                }
+            }
+
+        }
+
+        private void DstFileCombobox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            var path = DstPathTextBox.Text;
+            var comb = sender as ComboBox;
+            if (comb.SelectedIndex < 0)
+            {
+                return;
+            }
+            string selectedValue = comb.Items[comb.SelectedIndex].ToString();
+            var newPath = Path.Combine(path, selectedValue);
+            var exists = File.Exists(newPath);
+            if (exists)
+            {
+                try
+                {
+                    DstSheetCombobox.ItemsSource = ExcelWorkbook.GetSheetNames(newPath).ToList();
+                    DstSheetCombobox.SelectedIndex = 0;
+                }
+                catch
+                {
+                    DstSheetCombobox.SelectedIndex = -1;
+                    DstSheetCombobox.ItemsSource = new List<string>();
+                }
+            }
+        }
+
+        private void TargetFileCombobox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            var path = TargetPathTextBox.Text;
+            var comb = sender as ComboBox;
+            if (comb.SelectedIndex < 0)
+            {
+                return;
+            }
+            string selectedValue = comb.Items[comb.SelectedIndex].ToString();
+            var newPath = Path.Combine(path, selectedValue);
+            var exists = File.Exists(newPath);
+            if (exists)
+            {
+                try
+                {
+                    TargetSheetCombobox.ItemsSource = ExcelWorkbook.GetSheetNames(newPath).ToList();
+                    TargetSheetCombobox.SelectedIndex = 0;
+                }
+                catch
+                {
+                    TargetSheetCombobox.SelectedIndex = -1;
+                    TargetSheetCombobox.ItemsSource = new List<string>();
+                }
+            }
         }
     }
 }

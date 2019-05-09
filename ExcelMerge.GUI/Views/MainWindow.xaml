@@ -57,6 +57,18 @@
                         </MultiBinding>
                     </MenuItem.CommandParameter>
                 </MenuItem>
+
+                <MenuItem Header="{x:Static props:Resources.MenuItem_OpenTargetFile}"
+                          Command="{Binding OpenFileDialogCommand}"
+                          >
+                    <MenuItem.CommandParameter>
+                        <MultiBinding Converter="{StaticResource FileDialogConverter}">
+                            <Binding />
+                            <Binding Source="TargetPath"/>
+                        </MultiBinding>
+                    </MenuItem.CommandParameter>
+                </MenuItem>                
+                
                 <MenuItem Header="{x:Static props:Resources.MenuItem_RecentFiles}" 
                           ItemsSource="{Binding RecentFiles}" >
                     <MenuItem.ItemTemplate>
@@ -69,6 +81,10 @@
                                               />
                                     <MenuItem Header="{x:Static props:Resources.MenuItem_OpenAsDstFile}"
                                               Command="{Binding DataContext.OpenAsDstFileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                              CommandParameter="{Binding Path=Header, RelativeSource={RelativeSource AncestorType=MenuItem}}"
+                                              />
+                                    <MenuItem Header="{x:Static props:Resources.MenuItem_OpenAsTargetFile}"
+                                              Command="{Binding DataContext.OpenAsTargetFileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                               CommandParameter="{Binding Path=Header, RelativeSource={RelativeSource AncestorType=MenuItem}}"
                                               />
                                 </MenuItem>

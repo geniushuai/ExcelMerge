@@ -55,6 +55,7 @@ namespace ExcelMerge.GUI
         {
             EMEnvironmentValue.Set("SRC", CommandLineOption.SrcPath);
             EMEnvironmentValue.Set("DST", CommandLineOption.DstPath);
+            EMEnvironmentValue.Set("TARGET", CommandLineOption.TargetPath);
         }
 
         private ICommand CreateCommand(string[] args)
@@ -112,10 +113,10 @@ namespace ExcelMerge.GUI
             OnSettingUpdated();
         }
 
-        public void UpdateRecentFiles(string srcPath, string dstPath)
+        public void UpdateRecentFiles(string srcPath, string dstPath, string targetPath)
         {
             var updated = Setting.RecentFileSets.ToList();
-            var key = srcPath + "|" + dstPath;
+            var key = srcPath + "|" + dstPath + "|" + targetPath;
             var index = updated.IndexOf(key);
             if (index >= 0)
             {
@@ -124,7 +125,7 @@ namespace ExcelMerge.GUI
             }
             else
             {
-                updated.Insert(0, srcPath + "|" + dstPath);
+                updated.Insert(0, srcPath + "|" + dstPath + "|" + targetPath);
             }
 
             while (updated.Count > 20)
@@ -167,12 +168,17 @@ namespace ExcelMerge.GUI
             return Setting.RecentFileSets.Select(f => f.Split('|').ElementAtOrDefault(1));
         }
 
-        public IEnumerable<Tuple<string, string>> GetRecentFileSets()
+        public IEnumerable<string> GetRecentTargetFiles()
+        {
+            return Setting.RecentFileSets.Select(f => f.Split('|').ElementAtOrDefault(2));
+        }
+
+        public IEnumerable<Tuple<string, string, string>> GetRecentFileSets()
         {
             return Setting.RecentFileSets.Select(f =>
             {
                 var files = f.Split('|');
-                return Tuple.Create(files.ElementAtOrDefault(0), files.ElementAtOrDefault(1));
+                return Tuple.Create(files.ElementAtOrDefault(0), files.ElementAtOrDefault(1), files.ElementAtOrDefault(2));
             });
         }
 

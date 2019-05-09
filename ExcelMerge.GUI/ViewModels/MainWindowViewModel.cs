@@ -8,6 +8,7 @@ using Prism.Commands;
 using ExcelMerge.GUI.Views;
 using ExcelMerge.GUI.Settings;
 using ExcelMerge.GUI.ValueConverters;
+using System.Windows.Forms;
 
 namespace ExcelMerge.GUI.ViewModels
 {
@@ -62,6 +63,12 @@ namespace ExcelMerge.GUI.ViewModels
             set { SetProperty(ref dstPath, value); }
         }
 
+        private string targetPath;
+        public string TargetPath
+        {
+            get { return targetPath; }
+            set { SetProperty(ref targetPath, value); }
+        }
         private string cultureName;
         public string CultureName
         {
@@ -76,6 +83,7 @@ namespace ExcelMerge.GUI.ViewModels
         public DelegateCommand<FileDialogParameter> OpenFileDialogCommand { get; private set; }
         public DelegateCommand<string> OpenAsSrcFileCommand { get; private set; }
         public DelegateCommand<string> OpenAsDstFileCommand { get; private set; }
+        public DelegateCommand<string> OpenAsTargetFileCommand { get; private set; }
         public DelegateCommand<string> OpenFileSetCommand { get; private set; }
         public DelegateCommand<string> ChangeLanguageCommand{ get; private set; }
 
@@ -92,6 +100,7 @@ namespace ExcelMerge.GUI.ViewModels
             OpenFileDialogCommand = new DelegateCommand<FileDialogParameter>(OpenFileDialog);
             OpenAsSrcFileCommand = new DelegateCommand<string>(OpenAsSrcFile);
             OpenAsDstFileCommand = new DelegateCommand<string>(OpenAsDstFile);
+            OpenAsTargetFileCommand = new DelegateCommand<string>(OpenAsTargetFile);            
             OpenFileSetCommand = new DelegateCommand<string>(OpenFileSet);
             ChangeLanguageCommand = new DelegateCommand<string>(ChangeLanguage);
 
@@ -108,7 +117,7 @@ namespace ExcelMerge.GUI.ViewModels
             RecentFiles = App.Instance.GetRecentFiles().ToList();
             ExternalCommands = App.Instance.Setting.ExternalCommands.ToList();
             FileSettings = App.Instance.Setting.FileSettings.ToList();
-            RecentFileSets = App.Instance.GetRecentFileSets().Select(i => $"{i.Item1} | {i.Item2}").ToList();
+            RecentFileSets = App.Instance.GetRecentFileSets().Select(i => $"{i.Item1} | {i.Item2} | {i.Item3}").ToList();
             CultureName = App.Instance.Setting.Culture;
         }
 
@@ -144,10 +153,17 @@ namespace ExcelMerge.GUI.ViewModels
 
         private void OpenFileDialog(FileDialogParameter parameter)
         {
+            /*
             var dialog = new Microsoft.Win32.OpenFileDialog();
             dialog.Title = parameter.Title;
             if (dialog.ShowDialog().Value)
                 parameter.PropertyInfo.SetValue(parameter.Obj, dialog.FileName);
+                */
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                parameter.PropertyInfo.SetValue(parameter.Obj, fbd.SelectedPath);
+            }
         }
 
         private void OpenAsSrcFile(string file)
@@ -159,6 +175,10 @@ namespace ExcelMerge.GUI.ViewModels
         {
             DstPath = file;
         }
+        private void OpenAsTargetFile(string file)
+        {
+            TargetPath = file;
+        }
 
         private void OpenFileSet(string files)
         {
@@ -166,6 +186,7 @@ namespace ExcelMerge.GUI.ViewModels
 
             SrcPath = fs.ElementAtOrDefault(0).Trim();
             DstPath = fs.ElementAtOrDefault(1).Trim();
+            TargetPath = fs.ElementAtOrDefault(2).Trim();
         }
 
         private void ChangeLanguage(string calture)

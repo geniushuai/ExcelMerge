@@ -138,12 +138,18 @@
   <data name="MenuItem_OpenAsSrcFile" xml:space="preserve">
     <value>左側として開く</value>
   </data>
+  <data name="MenuItem_OpenAsTargetFile" xml:space="preserve">
+    <value>左側として開く</value>
+  </data>
   <data name="MenuItem_OpenDstFile" xml:space="preserve">
     <value>右側のファイルを開く</value>
   </data>
   <data name="MenuItem_OpenSrcFile" xml:space="preserve">
     <value>左側のファイルを開く</value>
   </data>
+  <data name="MenuItem_OpenTargetFile" xml:space="preserve">
+    <value>Open </value>
+  </data>  
   <data name="MenuItem_RecentFiles" xml:space="preserve">
     <value>最近使ったファイル</value>
   </data>
@@ -249,11 +255,17 @@
   <data name="Word_Sheet" xml:space="preserve">
     <value>シート</value>
   </data>
+  <data name="Word_File" xml:space="preserve">
+    <value>文件名</value>
+  </data>  
   <data name="Word_DstFile" xml:space="preserve">
     <value>右側のファイル</value>
   </data>
   <data name="Word_SrcFile" xml:space="preserve">
     <value>左側のファイル</value>
+  </data>
+  <data name="Word_TargetFile" xml:space="preserve">
+    <value>Target file</value>
   </data>
   <data name="Label_AddedColor" xml:space="preserve">
     <value>追加の色</value>
@@ -452,8 +464,14 @@
   <data name="Word_SheetIndex" xml:space="preserve">
     <value>シートインデックス</value>
   </data>
+  <data name="Word_FileIndex" xml:space="preserve">
+    <value>文件名位置</value>
+  </data>
   <data name="Word_SheetName" xml:space="preserve">
     <value>シート名</value>
+  </data>
+  <data name="Word_FileName" xml:space="preserve">
+    <value>文件名字</value>
   </data>
   <data name="Word_StartupSheet" xml:space="preserve">
     <value>起動時の比較シートにする</value>
@@ -491,10 +509,22 @@
   <data name="Label_FocusFirstDiff" xml:space="preserve">
     <value>差分抽出後に最初の差分に移動する</value>
   </data>
-  <data name="ContextMenu_CopyAsCsv" xml:space="preserve">
-    <value>CSV形式でコピー</value>
+  <data name="ContextMenu_CopySrcCell" xml:space="preserve">
+    <value>复制左边单元格</value>
   </data>
-  <data name="ContextMenu_CopyAsTsv" xml:space="preserve">
-    <value>TSV形式でコピー</value>
+  <data name="ContextMenu_CopySrcRow" xml:space="preserve">
+    <value>插入左边整行</value>
+  </data>
+  <data name="ContextMenu_ReplaceSrcRow" xml:space="preserve">
+    <value>替换左边整行</value>
+  </data>
+  <data name="ContextMenu_CopyDstCell" xml:space="preserve">
+    <value>复制右边单元格</value>
+  </data>
+  <data name="ContextMenu_CopyDstRow" xml:space="preserve">
+    <value>插入右边整行</value>
+  </data>
+  <data name="ContextMenu_ReplaceDstRow" xml:space="preserve">
+    <value>替换右边整行</value>
   </data>
 </root>

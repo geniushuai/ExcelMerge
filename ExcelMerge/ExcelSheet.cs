@@ -123,13 +123,12 @@ namespace ExcelMerge
         public static ExcelSheetDiff Diff(ExcelSheet src, ExcelSheet dst, ExcelSheetDiffConfig config)
         {
             var srcColumns = src.CreateColumns();
-            var dstColumns = dst.CreateColumns();
+            var dstColumns = dst.CreateColumns();            
             var columnStatusMap = CreateColumnStatusMap(srcColumns, dstColumns, config);
 
             var option = new DiffOption<ExcelRow>();
             option.EqualityComparer =
-                new RowComparer(new HashSet<int>(columnStatusMap.Where(i => i.Value != ExcelColumnStatus.None).Select(i => i.Key)));
-
+                new RowKeyComparer(new HashSet<int>(columnStatusMap.Where(i => i.Value != ExcelColumnStatus.None).Select(i => i.Key)));
             foreach (var row in src.Rows.Values)
             {
                 var shifted = new List<ExcelCell>();
@@ -185,7 +184,15 @@ namespace ExcelMerge
             }
 
             var sheetDiff = new ExcelSheetDiff();
-            DiffCells(resultArray, sheetDiff, columnStatusMap);
+            try
+            {
+                DiffCells(resultArray, sheetDiff, columnStatusMap);
+            }
+            catch (Exception ex)
+            {
+                string st = ex.StackTrace;
+                return null;
+            }
 
             return sheetDiff;
         }
@@ -259,16 +266,44 @@ namespace ExcelMerge
                 switch (result.Status)
                 {
                     case DiffStatus.Equal:
-                        DiffCellsCaseEqual(result, sheetDiff, columnStatusMap);
+                        try
+                        {
+                            DiffCellsCaseEqual(result, sheetDiff, columnStatusMap);
+                        }
+                        catch(Exception ex)
+                        {
+                            string a = ex.StackTrace;
+                        }
                         break;
                     case DiffStatus.Modified:
-                        DiffCellsCaseEqual(result, sheetDiff, columnStatusMap);
+                        try
+                        {
+                            DiffCellsCaseEqual(result, sheetDiff, columnStatusMap);
+                        }
+                        catch(Exception ex)
+                        {
+                            string b = ex.StackTrace;
+                        }
                         break;
                     case DiffStatus.Deleted:
-                        DiffCellsCaseDeleted(result, sheetDiff, columnStatusMap);
+                        try
+                        {
+                            DiffCellsCaseDeleted(result, sheetDiff, columnStatusMap);
+                        }
+                        catch(Exception ex)
+                        {
+                            string c = ex.StackTrace;
+                        }
                         break;
                     case DiffStatus.Inserted:
-                        DiffCellsCaseInserted(result, sheetDiff, columnStatusMap);
+                        try
+                        {
+                            DiffCellsCaseInserted(result, sheetDiff, columnStatusMap);
+                        }
+                        catch(Exception ex)
+                        {
+                            string d = ex.StackTrace;
+                        }
                         break;
                 }
             }

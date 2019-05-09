@@ -11,7 +11,7 @@ namespace FastWpfGrid
     partial class FastGridControl
     {
         public event EventHandler<SelectionChangedEventArgs> SelectedCellsChanged;
-
+        public event EventHandler<DoubleClickEventArgs> DoubleClickCell;
         private HashSet<FastGridCellAddress> _selectedCells = new HashSet<FastGridCellAddress>();
         private Dictionary<int, int> _selectedRows = new Dictionary<int, int>();
         private Dictionary<int, int> _selectedColumns = new Dictionary<int, int>();
@@ -24,7 +24,8 @@ namespace FastWpfGrid
         {
             get
             {
-                if (_selectedRealRowCountLimitLoaded) return _selectedRealRowCountLimit;
+                if (_selectedRealRowCountLimitLoaded && _selectedRealRowCountLimit!=null)
+                    return _selectedRealRowCountLimit;
                 _selectedRealRowCountLimitLoaded = true;
                 if (Model == null)
                 {
@@ -44,7 +45,8 @@ namespace FastWpfGrid
         {
             get
             {
-                if (_selectedRealColumnCountLimitLoaded) return _selectedRealColumnCountLimit;
+                if (_selectedRealColumnCountLimitLoaded && _selectedRealColumnCountLimit!=null)
+                    return _selectedRealColumnCountLimit;
                 _selectedRealColumnCountLimitLoaded = true;
                 if (Model == null)
                 {
@@ -155,6 +157,14 @@ namespace FastWpfGrid
         private void OnChangeSelectedCells(bool isInvokedByUser)
         {
             if (SelectedCellsChanged != null) SelectedCellsChanged(this, new SelectionChangedEventArgs { IsInvokedByUser = isInvokedByUser });
+        }
+
+        private void OnDoubleClickCell()
+        {
+            if(DoubleClickCell != null)
+            {
+                DoubleClickCell(this, new DoubleClickEventArgs());
+            }
         }
     }
 }

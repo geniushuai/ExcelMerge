@@ -17,6 +17,9 @@ namespace ExcelMerge.GUI.Commands
         [Option('d', "dst-path")]
         public string DstPath { get; set; } = string.Empty;
 
+        [Option('t', "target-path")]
+        public string TargetPath { get; set; } = string.Empty;
+
         [Option('c', "external-cmd")]
         public string ExternalCommand { get; set; } = string.Empty;
 
@@ -48,6 +51,7 @@ namespace ExcelMerge.GUI.Commands
         {
             SrcPath = !string.IsNullOrEmpty(SrcPath) ? Path.GetFullPath(SrcPath) : SrcPath;
             DstPath = !string.IsNullOrEmpty(DstPath) ? Path.GetFullPath(DstPath) : DstPath;
+            TargetPath = !string.IsNullOrEmpty(TargetPath) ? Path.GetFullPath(TargetPath) : TargetPath;
         }
     }
 }
